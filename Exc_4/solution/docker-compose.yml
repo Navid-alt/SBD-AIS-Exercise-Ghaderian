@@ -1,0 +1,41 @@
+# todo
+version: "3.8"
+services:
+  db:
+    image: postgres:18
+    container_name: db
+    env_file:
+      - debug.env
+    volumes:
+      - order-data:/var/lib/postgresql/18/docker
+    ports:
+      - "5432:5432"
+    networks:
+      - order-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U docker -d order"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  orderservice:
+    build: .
+    container_name: orderservice
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - debug.env
+    environment:
+      - DB_HOST=db
+    ports: 
+      - "3000:3000"
+    networks:
+      - order-network
+    command: ["./ordersystem"]
+volumes:
+  order-data:
+    name: order-data 
+networks:
+  order-network:
+    name: order-network
+    driver: bridge
